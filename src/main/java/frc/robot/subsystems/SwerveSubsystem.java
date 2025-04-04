@@ -4,40 +4,30 @@
 
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Meter;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
-//import com.pathplanner.lib.commands.PathfindingCommand;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
-//import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
-//import com.pathplanner.lib.util.DriveFeedforwards;
-//import com.pathplanner.lib.util.swerve.SwerveSetpoint;
-//import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
-
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
-
-import java.io.File;
-import java.util.function.Supplier;
-
-//import org.dyn4j.world.BroadphaseCollisionData;
-
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import swervelib.parser.SwerveParser;
-import swervelib.telemetry.SwerveDriveTelemetry;
-import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
-import swervelib.SwerveDrive;
-//import swervelib.SwerveInputStream;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import static edu.wpi.first.units.Units.Meter;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
+import java.io.File;
+import java.util.function.Supplier;
+import swervelib.SwerveDrive;
+import swervelib.parser.SwerveParser;
+import swervelib.telemetry.SwerveDriveTelemetry;
+import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 
 public class SwerveSubsystem extends SubsystemBase {
 
@@ -46,16 +36,11 @@ public class SwerveSubsystem extends SubsystemBase {
   public SwerveSubsystem() {
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     try {
-      swerveDrive = new SwerveParser(new File(Filesystem.getDeployDirectory(), "swerve")).createSwerveDrive(
-          Constants.maxSpeed,
-          new Pose2d(new Translation2d(Meter.of(1),
-              Meter.of(4)),
-              getAllianceRotation()));
-
-      // Alternative method if you don't want to supply the conversion factor via JSON
-      // files.
-      // swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed,
-      // angleConversionFactor, driveConversionFactor);
+      swerveDrive =
+          new SwerveParser(new File(Filesystem.getDeployDirectory(), "swerve"))
+              .createSwerveDrive(
+                  Constants.maxSpeed,
+                  new Pose2d(new Translation2d(Meter.of(1), Meter.of(4)), getAllianceRotation()));
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -66,7 +51,6 @@ public class SwerveSubsystem extends SubsystemBase {
     swerveDrive.pushOffsetsToEncoders();
 
     setupPathPlanner();
-
   }
 
   private Rotation2d getAllianceRotation() {
@@ -94,31 +78,36 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public Command driveFieldOriented(Supplier<ChassisSpeeds> velocity) {
-    return run(() -> {
-      swerveDrive.driveFieldOriented(velocity.get());
-    });
+    return run(
+        () -> {
+          swerveDrive.driveFieldOriented(velocity.get());
+        });
   }
 
   public void drive(Translation2d velocity, double rotation, boolean isOpenLoop) {
     swerveDrive.drive(velocity, rotation, false, isOpenLoop);
   }
 
-  public Command driveRobotOriented(Supplier<Translation2d> velocity, Supplier<Double> rotation,
-      Supplier<Boolean> isOpenLoop) {
-    return run(() -> {
-      swerveDrive.drive(velocity.get(), rotation.get(), false, isOpenLoop.get());
-    });
+  public Command driveRobotOriented(
+      Supplier<Translation2d> velocity, Supplier<Double> rotation, Supplier<Boolean> isOpenLoop) {
+    return run(
+        () -> {
+          swerveDrive.drive(velocity.get(), rotation.get(), false, isOpenLoop.get());
+        });
   }
 
   public Command driveCommand(double distanceInMeters, double speedInMetersPerSecond) {
     return run(() -> swerveDrive.drive(new ChassisSpeeds(speedInMetersPerSecond, 0, 0)))
-        .until(() -> swerveDrive.getPose().getTranslation().getDistance(new Translation2d(0, 0)) > distanceInMeters);
+        .until(
+            () ->
+                swerveDrive.getPose().getTranslation().getDistance(new Translation2d(0, 0))
+                    > distanceInMeters);
   }
 
   @Override
   public void periodic() {
-    SmartDashboard.putNumber("Odometry", swerveDrive.getPose().getTranslation().getDistance(new Translation2d(0, 0)));
-
+    SmartDashboard.putNumber(
+        "Odometry", swerveDrive.getPose().getTranslation().getDistance(new Translation2d(0, 0)));
   }
 
   public void setupPathPlanner() {
@@ -151,12 +140,7 @@ public class SwerveSubsystem extends SubsystemBase {
           // optionally outputs individual module feedforwards
           new PPHolonomicDriveController(
               // PPHolonomicController is the built in path following controller for holonomic
-              // drive trains
-              new PIDConstants(5.0, 0.0, 0.0),
-              // Translation PID constants
-              new PIDConstants(5.0, 0.0, 0.0)
-          // Rotation PID constants
-          ),
+              new PIDConstants(5.0, 0.0, 0.0), new PIDConstants(5.0, 0.0, 0.0)),
           config,
           // The robot configuration
           () -> {
@@ -171,26 +155,21 @@ public class SwerveSubsystem extends SubsystemBase {
             }
             return false;
           },
-          this
-      // Reference to this subsystem to set requirements
-      );
+          this);
 
     } catch (Exception e) {
       // Handle exception as needed
       e.printStackTrace();
     }
-
   }
 
-   /**
+  /**
    * Get the path follower with events.
    *
    * @param pathName PathPlanner path name.
    * @return {@link AutoBuilder#followPath(PathPlannerPath)} path command.
    */
-
   public Command getAutonomousCommand(String robotautonomousblue) {
     return new PathPlannerAuto(robotautonomousblue);
   }
 }
-  
